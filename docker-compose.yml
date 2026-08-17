@@ -1,5 +1,4 @@
 services:
-
   mysql:
     image: mysql:8.0
     container_name: blog_mysql
@@ -9,25 +8,30 @@ services:
     ports:
       - "3307:3306"
     volumes:
-      - ./mysql_data:/var/lib/mysql
+      - mysql_data:/var/lib/mysql
     networks:
       - blog_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   blog-app:
     build: .
     container_name: blog_app
-    restart: unless-stop
+    restart: unless-stopped
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
     ports:
       - "8080:8080"
     environment:
-       DB_USERNAME: ${DB_USERNAME}
-       DB_PASSWORD: ${DB_PASSWORD}
-       JWT_SECRET: ${JWT_SECRET}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
     networks:
       - blog_network
-
 
 volumes:
   mysql_data:
